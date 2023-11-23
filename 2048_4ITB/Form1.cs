@@ -5,7 +5,7 @@ namespace _2048_4ITB
     public partial class Form1 : Form
     {
         int[,] testSetup = new int[4, 4] {
-            { 0,4,4,4},
+            { 1024,1024,1024,1024},
             { 16,16,0,0},
             { 2,0,2,0},
             { 2,2,4,0},
@@ -94,14 +94,86 @@ namespace _2048_4ITB
         private void MoveNumbers(int x, int y) {
             List<int> nums;
 
-            if (x < 0 && y == 0) {
+            if (y == 0) { // horizontální smìr
+
                 for (int i = 0; i < 4; i++) { // vezmi každý øádek
                     nums = new List<int>();
-                    GetRow(nums, i);
-                    // algoritmus pro merge sloupeèkù
-                    MergeWhatYouCan(nums);
-                    // TODO: vložit nums do numbers
+                    GetRow(nums, i); // získání øádku
+                    if (x > 0) nums.Reverse();
+                    MergeWhatYouCan(nums); // merge stejných èísel 
+                    FillEmptyNumbers(nums);
+                    if (x > 0) nums.Reverse();
+                    ReturnValuesToRow(nums, i); // vrácení èísel z listu do 2D pole
                 }
+            } else { // vertikální smìr
+                for (int i = 0; i < 4; i++) {
+                    nums = new List<int>();
+                    GetColumn(nums, i);
+                    if (y > 0) nums.Reverse();
+                    MergeWhatYouCan(nums);
+                    FillEmptyNumbers(nums);
+                    if (y > 0) nums.Reverse();
+                    ReturnValuesToColumn(nums, i); // change
+                }
+            }
+
+            if (CheckWin()) {
+                MessageBox.Show("Pìkná práce, zkus to znovu!");
+                Application.Restart();
+            }
+
+            AddNewNumber();
+            if (IsFull()) {
+                CheckMergePossibility();
+            }
+        }
+
+        private bool CheckWin() {
+            foreach (var num in numbers) {
+                if (num.CurrentValue == 2048)
+                    return true;
+            }
+            return false;
+        }
+
+        private void CheckMergePossibility() {
+            for (int i = 0; i < 3; i++) {
+                for (int j = 0; j < 3; j++) {
+                    if (numbers[i, j].CurrentValue == numbers[i + 1, j].CurrentValue)
+                        return;
+                    if (numbers[i, j].CurrentValue == numbers[i, j + 1].CurrentValue)
+                        return;
+                }
+            }
+            MessageBox.Show("This is the end for you my friend");
+            Application.Restart();
+        }
+
+        private bool IsFull() {
+            foreach (var num in numbers) {
+                if (num.CurrentValue == 0) return false;
+            }
+            return true;
+        }
+
+        private void AddNewNumber() {
+            if (IsFull())
+                return;
+
+            int x = generator.Next(4);
+            int y = generator.Next(4);
+            while (numbers[x, y].CurrentValue != 0) {
+                x = generator.Next(4);
+                y = generator.Next(4);
+            }
+            numbers[x, y].CurrentValue = GetRandomValue();
+            return;
+        }
+
+        private void GetColumn(List<int> column, int columnIndex) {
+            for (int i = 0; i < 4; i++) {
+                if (numbers[i, columnIndex].CurrentValue > 0)
+                    column.Add(numbers[i, columnIndex].CurrentValue);
             }
         }
 
@@ -114,10 +186,26 @@ namespace _2048_4ITB
 
         private void MergeWhatYouCan(List<int> nums) {
             for (int j = 0; j < nums.Count - 1; j++) {
-                if (nums[j] == nums[j+1]) {
+                if (nums[j] == nums[j + 1]) {
                     nums[j] *= 2;
                     nums.RemoveAt(j + 1);
                 }
+            }
+        }
+
+        private void FillEmptyNumbers(List<int> nums) {
+            nums.AddRange(new int[4 - nums.Count]);
+        }
+
+        private void ReturnValuesToRow(List<int> nums, int rowIndex) {
+            for (int i = 0; i < 4; i++) {
+                numbers[rowIndex, i].CurrentValue = nums[i];
+            }
+        }
+
+        private void ReturnValuesToColumn(List<int> nums, int columnIndex) {
+            for (int i = 0; i < 4; i++) {
+                numbers[i, columnIndex].CurrentValue = nums[i];
             }
         }
     }
